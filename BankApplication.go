@@ -23,17 +23,38 @@ func addDinheiro(conta *Conta) {
 	NovoDinheiro, err := strconv.ParseFloat(scanner.Text(), 64)
 	if err != nil {
 		fmt.Println("Valor Errado")
+		return
 	}
-	if NovoDinheiro > 800 && NovoDinheiro < 0 {
+	if NovoDinheiro > 800 || NovoDinheiro < 0 {
 		fmt.Println("O Valor está errado")
+		return
 	}
-	conta.Dinheiro = NovoDinheiro
+	if NovoDinheiro < 20 {
+		fmt.Println("O Valor Minimno de Deposito é de 20")
+		return
+	}
+	conta.Dinheiro += NovoDinheiro
 	fmt.Printf("Valor atualizado da conta: %.2f€\n", conta.Dinheiro)
 }
 
 func removeDinheiro(conta *Conta) float64 {
 	var dinheiro float64
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Qual é o Valor da Conta que deseja Tirar")
+	scanner.Scan()
+	dinheiro, err := strconv.ParseFloat(scanner.Text(), 64)
+	if err != nil {
+		fmt.Println("Valor Errado")
+		return 0
+	}
+	if conta.Dinheiro < dinheiro || dinheiro < 0 {
+		fmt.Println("Esse valor não é autorizado")
+		return 0
+	}
+	conta.Dinheiro -= dinheiro
+	fmt.Printf("Valor atualizado da conta: %.2f€\n", conta.Dinheiro)
 
+	return dinheiro
 }
 
 func abrirConta(conta Conta) Conta {
