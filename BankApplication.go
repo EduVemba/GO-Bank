@@ -93,7 +93,13 @@ func abrirConta(Nome string, tipoD string, valorE float64) {
 		return
 	}
 
-	id := len(contas) + 1
+	var id int
+	for _, conta := range contas {
+		if conta.ID > id {
+			id = conta.ID
+		}
+	}
+	id++
 
 	conta := Conta{
 		ID:             id,
