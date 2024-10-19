@@ -17,11 +17,10 @@ var Tipo = map[int]string{
 var contas []Conta
 
 type Conta struct {
-	ID             int
-	Nome           string
-	TipoConta      string
-	ValordeEntrada float64
-	Dinheiro       float64
+	ID        int
+	Nome      string
+	TipoConta string
+	Dinheiro  float64
 }
 
 func addDinheiro(conta *Conta) {
@@ -66,7 +65,10 @@ func removeDinheiro(conta *Conta) float64 {
 	return dinheiro
 }
 
-func abrirConta(Nome string, tipoD string, valorE float64) {
+func abrirConta() {
+
+	var Nome string
+	var valorE float64
 
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Que tipo de conta deseja abrir? (Digite o número correspondente)")
@@ -88,7 +90,7 @@ func abrirConta(Nome string, tipoD string, valorE float64) {
 	valorEntradaInput := scanner.Text()
 
 	valorEntrada, err := strconv.ParseFloat(valorEntradaInput, 64)
-	if err != nil || valorEntrada < 50 {
+	if err != nil || valorEntrada < 50 || valorEntrada > 800 {
 		fmt.Println("Valor de entrada inválido. Operação cancelada.")
 		return
 	}
@@ -102,17 +104,40 @@ func abrirConta(Nome string, tipoD string, valorE float64) {
 	id++
 
 	conta := Conta{
-		ID:             id,
-		Nome:           Nome,
-		TipoConta:      Tipo[tipoInt],
-		ValordeEntrada: valorE,
-		Dinheiro:       valorE,
+		ID:        id,
+		Nome:      Nome,
+		TipoConta: Tipo[tipoInt],
+		Dinheiro:  valorE,
 	}
 
 	contas = append(contas, conta)
 
 	fmt.Printf("\nConta criada com sucesso! Tipo de conta: %s, Tipo de Conta: %s\n", conta.Nome, conta.TipoConta)
+}
 
+func getConta() *Conta {
+
+	var id int
+	var nome string
+	var conta *Conta
+
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Qual a o ID ou o Nome da conta que pretende encontrar")
+	scanner.Scan()
+	input := scanner.Text()
+
+	id, err := strconv.Atoi(input)
+	if err != nil {
+		nome = input
+	}
+	for _, c := range contas {
+		if c.ID == id || c.Nome == nome {
+			conta = &c
+			return conta
+		}
+	}
+	fmt.Println("Nenhuma Conta encontrada")
+	return nil
 }
 
 func main() {
