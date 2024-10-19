@@ -130,8 +130,25 @@ func getConta() *Conta {
 	if err != nil {
 		nome = input
 	}
+	arr := contas
+	low := 0
+	high := len(arr) - 1
+	if err == nil {
+		for low <= high {
+			mid := low + (high-low)/2
+			if arr[mid].ID == id {
+				return &arr[mid]
+			}
+			if arr[mid].ID < id {
+				low = mid + 1
+			} else {
+				high = mid - 1
+			}
+		}
+		return nil
+	}
 	for _, c := range contas {
-		if c.ID == id || c.Nome == nome {
+		if c.Nome == nome {
 			conta = &c
 			return conta
 		}
