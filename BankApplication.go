@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 var Tipo = map[int]string{
@@ -69,9 +70,6 @@ func removeDinheiro() float64 {
 
 func abrirConta() {
 
-	var Nome string
-	var valorE float64
-
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Que tipo de conta deseja abrir? (Digite o número correspondente)")
 	fmt.Println("1: Normal")
@@ -87,6 +85,16 @@ func abrirConta() {
 		return
 	}
 
+	fmt.Print("Qual é o seu nome \nNome:")
+	scanner.Scan()
+	ValorNome := scanner.Text()
+
+	nome := ValorNome
+	if nome == "" {
+		fmt.Println("O Nome não poder ser vazio")
+		return
+	}
+
 	fmt.Print("Insira um valor de entrada. O valor deve ser no mínimo de 50€ \nValor: ")
 	scanner.Scan()
 	valorEntradaInput := scanner.Text()
@@ -99,17 +107,15 @@ func abrirConta() {
 
 	var id int
 	for _, conta := range contas {
-		if conta.ID > id {
-			id = conta.ID
-		}
+		id = conta.ID + 1
 	}
 	id++
 
 	conta := Conta{
 		ID:        id,
-		Nome:      Nome,
+		Nome:      nome,
 		TipoConta: Tipo[tipoInt],
-		Dinheiro:  valorE,
+		Dinheiro:  valorEntrada,
 	}
 
 	contas = append(contas, conta)
@@ -198,4 +204,8 @@ func main() {
 		}
 	}
 
+}
+
+func timeSleep() {
+	time.Sleep(2 * time.Second)
 }
