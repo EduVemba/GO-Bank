@@ -2,11 +2,43 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
 	"fmt"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"log"
 	"os"
 	"strconv"
 	"time"
 )
+
+func connectDB() {
+	err := godotenv.Load("bd_connect.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected to DB")
+
+}
 
 var Tipo = map[int]string{
 	1: "Normal",
@@ -164,45 +196,49 @@ func getConta() *Conta {
 }
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
+	connectDB()
+	/*
+			scanner := bufio.NewScanner(os.Stdin)
 
-	for {
-		// Menu principal
-		fmt.Println("\nBem Vindo Ao Vemba´s Bank")
-		fmt.Println(`
-     1. Abrir conta
-     2. Ver Conta
-     3. Remover Dinheiro
-     4. Adicionar Dinheiro
-     5. Sair
-        `)
+			for {
+				// Menu principal
+				fmt.Println("\nBem Vindo Ao Vemba´s Bank")
+				fmt.Println(`
+		     1. Abrir conta
+		     2. Ver Conta
+		     3. Remover Dinheiro
+		     4. Adicionar Dinheiro
+		     5. Sair
+		        `)
 
-		// Solicita a opção do usuário
-		fmt.Print("Escolha uma opção: ")
-		scanner.Scan()
+				// Solicita a opção do usuário
+				fmt.Print("Escolha uma opção: ")
+				scanner.Scan()
 
-		opcao, err := strconv.Atoi(scanner.Text())
-		if err != nil {
-			fmt.Println("Opção inválida. Por favor, tente novamente.")
-			continue
-		}
+				opcao, err := strconv.Atoi(scanner.Text())
+				if err != nil {
+					fmt.Println("Opção inválida. Por favor, tente novamente.")
+					continue
+				}
 
-		switch opcao {
-		case 1:
-			abrirConta()
-		case 2:
-			getConta()
-		case 3:
-			removeDinheiro()
-		case 4:
-			addDinheiro()
-		case 5:
-			fmt.Println("Obrigado por usar o Vemba's Bank. Adeus!")
-			return
-		default:
-			fmt.Println("Opção inválida. Por favor, escolha uma opção entre 1 e 5.")
-		}
-	}
+				switch opcao {
+				case 1:
+					abrirConta()
+				case 2:
+					getConta()
+				case 3:
+					removeDinheiro()
+				case 4:
+					addDinheiro()
+				case 5:
+					fmt.Println("Obrigado por usar o Vemba's Bank. Adeus!")
+					return
+				default:
+					fmt.Println("Opção inválida. Por favor, escolha uma opção entre 1 e 5.")
+				}
+			}
+
+	*/
 
 }
 
