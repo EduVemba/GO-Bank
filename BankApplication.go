@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -18,19 +19,24 @@ func connectDB() *sql.DB {
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	err = db.Ping()
 	if err != nil {
@@ -38,9 +44,7 @@ func connectDB() *sql.DB {
 	}
 
 	fmt.Println("Successfully connected to DB")
-
 	return db
-
 }
 
 var Tipo = map[int]string{
@@ -104,55 +108,85 @@ func removeDinheiro() float64 {
 	return dinheiro
 }
 func abrirConta(db *sql.DB) {
+	// Verificar conexão
+	if err := db.Ping(); err != nil {
+		fmt.Println("Erro de conexão com o banco de dados:", err)
+		return
+	}
+
 	psqlscript := `CALL addConta($1, $2, $3, $4)`
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Que tipo de conta deseja abrir? (Digite o número correspondente)")
-	fmt.Println("1: Normal")
-	fmt.Println("2: Familia")
-	fmt.Println("3: Empresa")
-	fmt.Println("4: Estudante")
-	fmt.Print("Escolha: ")
-	//TODO: FIX: por algum motivo esta a ler um valor vazio
-	tipoInput, _ := reader.ReadString('\n')
-	tipoInput = strings.TrimSpace(tipoInput)
+	var tipoInt int
+	for {
+		fmt.Println("\nQue tipo de conta deseja abrir? (Digite o número correspondente)")
+		for i := 1; i <= 4; i++ {
+			fmt.Printf("%d: %s\n", i, Tipo[i])
+		}
+		fmt.Print("Escolha: ")
 
-	tipoInt, err := strconv.Atoi(tipoInput)
-	if err != nil || tipoInt < 1 || tipoInt > 4 || Tipo[tipoInt] == "" {
-		fmt.Println("Tipo de conta inválido. Operação cancelada.")
-		return
+		input, err := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		tipoInt, err = strconv.Atoi(input)
+		if err == nil && tipoInt >= 1 && tipoInt <= 4 {
+			break
+		}
+		fmt.Println("Tipo de conta inválido. Por favor, escolha um número entre 1 e 4.")
 	}
 	tipoConta := Tipo[tipoInt]
 
-	fmt.Print("Qual é o seu nome \nNome: ")
-	nome, _ := reader.ReadString('\n')
-	nome = strings.TrimSpace(nome)
-	if nome == "" {
+	var nome string
+	for {
+		fmt.Print("\nQual é o seu nome\nNome: ")
+		input, err := reader.ReadString('\n')
+		nome = strings.TrimSpace(input)
+		if err == nil && nome != "" {
+			break
+		}
 		fmt.Println("O nome não pode ser vazio.")
-		return
 	}
 
-	fmt.Print("Insira um valor de entrada. O valor deve ser no mínimo de 50€ \nValor: ")
-	valorEntradaInput, _ := reader.ReadString('\n')
-	valorEntradaInput = strings.TrimSpace(valorEntradaInput)
+	var valorEntrada float64
+	for {
+		fmt.Print("\nInsira um valor de entrada. O valor deve ser entre 50€ e 800€\nValor: ")
+		input, err := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
 
-	valorEntrada, err := strconv.ParseFloat(valorEntradaInput, 64)
-	if err != nil || valorEntrada < 50 || valorEntrada > 800 {
-		fmt.Println("Valor de entrada inválido. Operação cancelada.")
-		return
+		valorEntrada, err = strconv.ParseFloat(input, 64)
+		if err == nil && valorEntrada >= 50 && valorEntrada <= 800 {
+			break
+		}
+		fmt.Println("Valor inválido. Por favor, insira um valor entre 50€ e 800€.")
 	}
 
-	fmt.Print("Digite seu e-mail: ")
-	email, _ := reader.ReadString('\n')
-	email = strings.TrimSpace(email)
-	if email == "" {
-		fmt.Println("O e-mail não pode ser vazio.")
-		return
+	var email string
+	for {
+		fmt.Print("\nDigite seu e-mail: ")
+		input, err := reader.ReadString('\n')
+		email = strings.TrimSpace(input)
+		if err == nil && isValidEmail(email) {
+			break
+		}
+		fmt.Println("Por favor, insira um e-mail válido.")
 	}
 
-	_, err = db.Exec(psqlscript, nome, tipoConta, valorEntrada, email)
+	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal("Erro ao executar a procedure:", err)
+		fmt.Println("Erro ao iniciar transação:", err)
+		return
+	}
+
+	_, err = tx.Exec(psqlscript, nome, tipoConta, valorEntrada, email)
+	if err != nil {
+		tx.Rollback()
+		fmt.Println("Erro ao criar conta:", err)
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		fmt.Println("Erro ao finalizar transação:", err)
+		return
 	}
 
 	var id int
@@ -171,10 +205,17 @@ func abrirConta(db *sql.DB) {
 	}
 	contas = append(contas, conta)
 
-	fmt.Printf("\nConta criada com sucesso! Nome: %s, Tipo de Conta: %s\n", conta.Nome, conta.TipoConta)
+	fmt.Printf("\nConta criada com sucesso!\nNome: %s\nTipo de Conta: %s\nSaldo Inicial: %.2f€\nEmail: %s\n",
+		conta.Nome, conta.TipoConta, conta.Dinheiro, conta.Email)
+}
+
+func isValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`)
+	return emailRegex.MatchString(strings.ToLower(email))
 }
 
 func getConta() *Conta {
+	//	plsql := `SELECT * from users WHERE email = 1$`
 	var id int
 	var nome string
 	var conta *Conta
