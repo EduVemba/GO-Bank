@@ -9,10 +9,11 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
-func connectDB() {
+func connectDB() *sql.DB {
 	err := godotenv.Load("bd_connect.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -38,6 +39,8 @@ func connectDB() {
 
 	fmt.Println("Successfully connected to DB")
 
+	return db
+
 }
 
 var Tipo = map[int]string{
@@ -54,6 +57,7 @@ type Conta struct {
 	Nome      string
 	TipoConta string
 	Dinheiro  float64
+	Email     string
 }
 
 func addDinheiro() {
@@ -99,37 +103,38 @@ func removeDinheiro() float64 {
 
 	return dinheiro
 }
+func abrirConta(db *sql.DB) {
+	psqlscript := `CALL addConta($1, $2, $3, $4)`
+	reader := bufio.NewReader(os.Stdin)
 
-func abrirConta() {
-
-	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Que tipo de conta deseja abrir? (Digite o número correspondente)")
 	fmt.Println("1: Normal")
 	fmt.Println("2: Familia")
 	fmt.Println("3: Empresa")
 	fmt.Println("4: Estudante")
-	scanner.Scan()
-	tipoInput := scanner.Text()
+	fmt.Print("Escolha: ")
+	//TODO: FIX: por algum motivo esta a ler um valor vazio
+	tipoInput, _ := reader.ReadString('\n')
+	tipoInput = strings.TrimSpace(tipoInput)
 
 	tipoInt, err := strconv.Atoi(tipoInput)
-	if err != nil || tipoInt < 1 || tipoInt > 4 {
+	if err != nil || tipoInt < 1 || tipoInt > 4 || Tipo[tipoInt] == "" {
 		fmt.Println("Tipo de conta inválido. Operação cancelada.")
 		return
 	}
+	tipoConta := Tipo[tipoInt]
 
-	fmt.Print("Qual é o seu nome \nNome:")
-	scanner.Scan()
-	ValorNome := scanner.Text()
-
-	nome := ValorNome
+	fmt.Print("Qual é o seu nome \nNome: ")
+	nome, _ := reader.ReadString('\n')
+	nome = strings.TrimSpace(nome)
 	if nome == "" {
-		fmt.Println("O Nome não poder ser vazio")
+		fmt.Println("O nome não pode ser vazio.")
 		return
 	}
 
 	fmt.Print("Insira um valor de entrada. O valor deve ser no mínimo de 50€ \nValor: ")
-	scanner.Scan()
-	valorEntradaInput := scanner.Text()
+	valorEntradaInput, _ := reader.ReadString('\n')
+	valorEntradaInput = strings.TrimSpace(valorEntradaInput)
 
 	valorEntrada, err := strconv.ParseFloat(valorEntradaInput, 64)
 	if err != nil || valorEntrada < 50 || valorEntrada > 800 {
@@ -137,22 +142,36 @@ func abrirConta() {
 		return
 	}
 
+	fmt.Print("Digite seu e-mail: ")
+	email, _ := reader.ReadString('\n')
+	email = strings.TrimSpace(email)
+	if email == "" {
+		fmt.Println("O e-mail não pode ser vazio.")
+		return
+	}
+
+	_, err = db.Exec(psqlscript, nome, tipoConta, valorEntrada, email)
+	if err != nil {
+		log.Fatal("Erro ao executar a procedure:", err)
+	}
+
 	var id int
 	for _, conta := range contas {
-		id = conta.ID + 1
+		if conta.ID >= id {
+			id = conta.ID + 1
+		}
 	}
-	id++
 
 	conta := Conta{
 		ID:        id,
 		Nome:      nome,
-		TipoConta: Tipo[tipoInt],
+		TipoConta: tipoConta,
 		Dinheiro:  valorEntrada,
+		Email:     email,
 	}
-
 	contas = append(contas, conta)
 
-	fmt.Printf("\nConta criada com sucesso! Tipo de conta: %s, Tipo de Conta: %s\n", conta.Nome, conta.TipoConta)
+	fmt.Printf("\nConta criada com sucesso! Nome: %s, Tipo de Conta: %s\n", conta.Nome, conta.TipoConta)
 }
 
 func getConta() *Conta {
@@ -196,50 +215,24 @@ func getConta() *Conta {
 }
 
 func main() {
-	connectDB()
-	/*
-			scanner := bufio.NewScanner(os.Stdin)
+	db := connectDB()
+	defer db.Close()
+	fmt.Println("Bem-vindo ao sistema bancário!")
+	fmt.Println("Escolha uma opção:")
+	fmt.Println("1: Abrir nova conta")
+	fmt.Println("0: Sair")
 
-			for {
-				// Menu principal
-				fmt.Println("\nBem Vindo Ao Vemba´s Bank")
-				fmt.Println(`
-		     1. Abrir conta
-		     2. Ver Conta
-		     3. Remover Dinheiro
-		     4. Adicionar Dinheiro
-		     5. Sair
-		        `)
+	var escolha int
+	fmt.Scan(&escolha)
 
-				// Solicita a opção do usuário
-				fmt.Print("Escolha uma opção: ")
-				scanner.Scan()
-
-				opcao, err := strconv.Atoi(scanner.Text())
-				if err != nil {
-					fmt.Println("Opção inválida. Por favor, tente novamente.")
-					continue
-				}
-
-				switch opcao {
-				case 1:
-					abrirConta()
-				case 2:
-					getConta()
-				case 3:
-					removeDinheiro()
-				case 4:
-					addDinheiro()
-				case 5:
-					fmt.Println("Obrigado por usar o Vemba's Bank. Adeus!")
-					return
-				default:
-					fmt.Println("Opção inválida. Por favor, escolha uma opção entre 1 e 5.")
-				}
-			}
-
-	*/
-
+	switch escolha {
+	case 1:
+		abrirConta(db)
+	case 0:
+		fmt.Println("Saindo do sistema.")
+	default:
+		fmt.Println("Opção inválida.")
+	}
 }
 
 func timeSleep() {
