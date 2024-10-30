@@ -43,7 +43,7 @@ func connectDB() *sql.DB {
 		panic(err)
 	}
 
-	fmt.Println("Successfully connected to DB")
+	//fmt.Println("Successfully connected to DB")
 	return db
 }
 
@@ -214,44 +214,28 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(strings.ToLower(email))
 }
 
+//TODO: Fix the scanner Bug
 func getConta() *Conta {
-	//	plsql := `SELECT * from users WHERE email = 1$`
-	var id int
-	var nome string
 	var conta *Conta
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Qual a o ID ou o Nome da conta que pretende encontrar")
-	scanner.Scan()
-	input := scanner.Text()
 
-	id, err := strconv.Atoi(input)
-	if err != nil {
-		nome = input
-	}
-	arr := contas
-	low := 0
-	high := len(arr) - 1
-	if err == nil {
-		for low <= high {
-			mid := low + (high-low)/2
-			if arr[mid].ID == id {
-				return conta
-			}
-			if arr[mid].ID < id {
-				low = mid + 1
-			} else {
-				high = mid - 1
-			}
-		}
+	fmt.Println("Digite o seu email: ")
+	scanner.Scan()
+	email := scanner.Text()
+
+	if !strings.Contains(email, "@") {
+		fmt.Println("Email inválido")
 		return nil
 	}
+
 	for _, c := range contas {
-		if c.Nome == nome {
+		if c.Email == email {
 			conta = &c
 			return conta
 		}
 	}
-	fmt.Println("Nenhuma Conta encontrada")
+
+	fmt.Println("Nenhuma conta encontrada com este email")
 	return nil
 }
 
@@ -261,6 +245,7 @@ func main() {
 	fmt.Println("Bem-vindo ao sistema bancário!")
 	fmt.Println("Escolha uma opção:")
 	fmt.Println("1: Abrir nova conta")
+	fmt.Println("2: Ver Conta")
 	fmt.Println("0: Sair")
 
 	var escolha int
@@ -269,6 +254,8 @@ func main() {
 	switch escolha {
 	case 1:
 		abrirConta(db)
+	case 2:
+		getConta()
 	case 0:
 		fmt.Println("Saindo do sistema.")
 	default:
