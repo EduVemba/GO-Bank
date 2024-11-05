@@ -214,7 +214,7 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(strings.ToLower(email))
 }
 
-//TODO: Fix the scanner Bug
+// TODO: Fix the scanner Bug
 func getConta() *Conta {
 	var conta *Conta
 	scanner := bufio.NewScanner(os.Stdin)
@@ -223,16 +223,13 @@ func getConta() *Conta {
 	scanner.Scan()
 	email := scanner.Text()
 
-	if !strings.Contains(email, "@") {
-		fmt.Println("Email inválido")
-		return nil
-	}
+	isValidEmail(email)
 
 	for _, c := range contas {
 		if c.Email == email {
-			conta = &c
 			return conta
 		}
+		fmt.Println(c)
 	}
 
 	fmt.Println("Nenhuma conta encontrada com este email")
