@@ -65,47 +65,21 @@ type Conta struct {
 }
 
 func addDinheiro() {
-	var conta *Conta
-	var NovoDinheiro float64
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Qual é o Valor da Conta que deseja Meter")
-	scanner.Scan()
-	NovoDinheiro, err := strconv.ParseFloat(scanner.Text(), 64)
-	if err != nil {
-		fmt.Println("Valor Errado")
-		return
-	}
-	if NovoDinheiro > 800 || NovoDinheiro < 0 {
-		fmt.Println("O Valor está errado")
-		return
-	}
-	if NovoDinheiro < 20 {
-		fmt.Println("O Valor Minimno de Deposito é de 20")
-		return
-	}
-	conta.Dinheiro += NovoDinheiro
-	fmt.Printf("Valor atualizado da conta: %.2f€\n", conta.Dinheiro)
+	//	psql := `UPDATE users SET dinheiro = $1 WHERE email = $2`
+
+	var email string
+	var dinheiro float64
+
+	fmt.Print("Qual é a quantidade que deseja adicionar")
+	fmt.Scan(&dinheiro)
+
+	fmt.Print("Qual é o email da Conta que deseja depositar :")
+	fmt.Scan(&email)
+
 }
 
-func removeDinheiro() float64 {
-	var conta *Conta
-	var dinheiro float64
-	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Qual é o Valor da Conta que deseja Tirar")
-	scanner.Scan()
-	dinheiro, err := strconv.ParseFloat(scanner.Text(), 64)
-	if err != nil {
-		fmt.Println("Valor Errado")
-		return 0
-	}
-	if conta.Dinheiro < dinheiro || dinheiro < 0 {
-		fmt.Println("Esse valor não é autorizado")
-		return 0
-	}
-	conta.Dinheiro -= dinheiro
-	fmt.Printf("Valor atualizado da conta: %.2f€\n", conta.Dinheiro)
+func removeDinheiro() {
 
-	return dinheiro
 }
 func abrirConta(db *sql.DB) {
 	// Verificar conexão
@@ -214,26 +188,31 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(strings.ToLower(email))
 }
 
-// TODO: Fix the scanner Bug
-func getConta() *Conta {
-	var conta *Conta
-	scanner := bufio.NewScanner(os.Stdin)
+func getConta(db *sql.DB) *Conta {
+	psql := `SELECT * FROM users WHERE email = $1`
+
+	var email string
 
 	fmt.Println("Digite o seu email: ")
-	scanner.Scan()
-	email := scanner.Text()
+	fmt.Scan(&email)
 
-	isValidEmail(email)
+	conta := &Conta{}
 
-	for _, c := range contas {
-		if c.Email == email {
-			return conta
+	err := db.QueryRow(psql, email).Scan(&conta.ID, &conta.Nome, &conta.TipoConta, &conta.Dinheiro, &conta.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Nenhuma conta encontrada com este email.")
+			return nil
 		}
-		fmt.Println(c)
+		log.Printf("Erro ao obter um conta: %v", err)
 	}
 
-	fmt.Println("Nenhuma conta encontrada com este email")
-	return nil
+	fmt.Printf("Conta :\n ID = %d\n Nome = %s\n TipoConta = %s\n Dinheiro = %.2f\n Email = %s\n",
+		conta.ID, conta.Nome, conta.TipoConta, conta.Dinheiro, conta.Email)
+
+	time.Sleep(3 * time.Second)
+
+	return conta
 }
 
 func main() {
@@ -252,7 +231,7 @@ func main() {
 	case 1:
 		abrirConta(db)
 	case 2:
-		getConta()
+		getConta(db)
 	case 0:
 		fmt.Println("Saindo do sistema.")
 	default:
