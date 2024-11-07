@@ -1,5 +1,7 @@
 package main
 
+//TODO: Implement User Interface
+
 import (
 	"bufio"
 	"database/sql"
@@ -64,25 +66,67 @@ type Conta struct {
 	Email     string
 }
 
-func addDinheiro() {
-	//	psql := `UPDATE users SET dinheiro = $1 WHERE email = $2`
+// TODO: Implement exception for Maximum possible deposit
+func addDinheiro(db *sql.DB) {
+	psql := `UPDATE users SET dinheiro = dinheiro + $1 WHERE email = $2`
 
 	var email string
 	var dinheiro float64
 
-	fmt.Print("Qual é a quantidade que deseja adicionar")
+	fmt.Print("Qual é a quantidade que deseja Depositar: ")
 	fmt.Scan(&dinheiro)
 
-	fmt.Print("Qual é o email da Conta que deseja depositar :")
+	fmt.Print("Qual é o email da Conta que deseja Depositar: ")
 	fmt.Scan(&email)
 
+	result, err := db.Exec(psql, dinheiro, email)
+	if err != nil {
+		log.Fatalf("Error inserting conta da dinheiro: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Fatalf("Error getting rows affected: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		fmt.Println("Nenhuma conta encontrada com este email")
+	}
+
+	fmt.Printf("Saldo de conta atualizado para : %.2f\n€", dinheiro)
 }
 
-func removeDinheiro() {
+// TODO: Implement exception for negative numbers
+func removeDinheiro(db *sql.DB) {
+	psql := `UPDATE users SET dinheiro = dinheiro - $1 WHERE email = $2`
+
+	var email string
+	var dinheiro float64
+
+	fmt.Print("Qual é a quantidade que deseja Retirar: ")
+	fmt.Scan(&dinheiro)
+
+	fmt.Print("Qual é o email da Conta que deseja Retirar: ")
+	fmt.Scan(&email)
+
+	result, err := db.Exec(psql, dinheiro, email)
+	if err != nil {
+		log.Fatalf("Error inserting conta da dinheiro: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Fatalf("Error getting rows affected: %v", err)
+	}
+
+	if rowsAffected == 0 {
+		fmt.Println("Nenhuma conta encontrada com este email")
+	}
+
+	fmt.Printf("Saldo de conta atualizado para : %.2f\n€", dinheiro)
 
 }
 func abrirConta(db *sql.DB) {
-	// Verificar conexão
 	if err := db.Ping(); err != nil {
 		fmt.Println("Erro de conexão com o banco de dados:", err)
 		return
@@ -222,6 +266,8 @@ func main() {
 	fmt.Println("Escolha uma opção:")
 	fmt.Println("1: Abrir nova conta")
 	fmt.Println("2: Ver Conta")
+	fmt.Println("3: Adicionar dinheiro ")
+	fmt.Println("4: Retirar dinheiro")
 	fmt.Println("0: Sair")
 
 	var escolha int
@@ -232,12 +278,19 @@ func main() {
 		abrirConta(db)
 	case 2:
 		getConta(db)
+	case 3:
+		addDinheiro(db)
+	case 4:
+		removeDinheiro(db)
 	case 0:
 		fmt.Println("Saindo do sistema.")
 	default:
 		fmt.Println("Opção inválida.")
+
 	}
 }
+
+//TODO: Implement timeSleep forEach escolha(option)
 
 func timeSleep() {
 	time.Sleep(2 * time.Second)
