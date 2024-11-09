@@ -66,7 +66,6 @@ type Conta struct {
 	Email     string
 }
 
-// TODO: Implement exception for Maximum possible deposit
 func addDinheiro(db *sql.DB) {
 	psql := `UPDATE users SET dinheiro = dinheiro + $1 WHERE email = $2`
 
@@ -75,6 +74,10 @@ func addDinheiro(db *sql.DB) {
 
 	fmt.Print("Qual é a quantidade que deseja Depositar: ")
 	fmt.Scan(&dinheiro)
+
+	if dinheiro > 1000 {
+		log.Fatal("O valo não pode ser nulo ou negativo")
+	}
 
 	fmt.Print("Qual é o email da Conta que deseja Depositar: ")
 	fmt.Scan(&email)
@@ -96,7 +99,6 @@ func addDinheiro(db *sql.DB) {
 	fmt.Printf("Saldo de conta atualizado para : %.2f\n€", dinheiro)
 }
 
-// TODO: Implement exception for negative numbers
 func removeDinheiro(db *sql.DB) {
 	psql := `UPDATE users SET dinheiro = dinheiro - $1 WHERE email = $2`
 
@@ -105,6 +107,10 @@ func removeDinheiro(db *sql.DB) {
 
 	fmt.Print("Qual é a quantidade que deseja Retirar: ")
 	fmt.Scan(&dinheiro)
+
+	if dinheiro <= 0 {
+		log.Fatal("O valo não pode ser nulo ou negativo")
+	}
 
 	fmt.Print("Qual é o email da Conta que deseja Retirar: ")
 	fmt.Scan(&email)
@@ -227,6 +233,31 @@ func abrirConta(db *sql.DB) {
 		conta.Nome, conta.TipoConta, conta.Dinheiro, conta.Email)
 }
 
+func deletConta(db *sql.DB) {
+	psql := `DELETE FROM users WHERE email = $1`
+
+	var email string
+
+	fmt.Println("Qual o email da conta que deseja apagar: ")
+	fmt.Scan(&email)
+
+	result, err := db.Exec(psql, email)
+	if err != nil {
+		fmt.Println("Erro ao deletar conta:", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Erro ao deletar conta:", err)
+	}
+
+	if rowsAffected == 0 {
+		fmt.Println("Nenhuma conta encontrada com este email.")
+	} else {
+		fmt.Println("Conta removida com sucesso.")
+	}
+}
+
 func isValidEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$`)
 	return emailRegex.MatchString(strings.ToLower(email))
@@ -254,7 +285,7 @@ func getConta(db *sql.DB) *Conta {
 	fmt.Printf("Conta :\n ID = %d\n Nome = %s\n TipoConta = %s\n Dinheiro = %.2f\n Email = %s\n",
 		conta.ID, conta.Nome, conta.TipoConta, conta.Dinheiro, conta.Email)
 
-	time.Sleep(3 * time.Second)
+	timeSleep(3)
 
 	return conta
 }
@@ -268,6 +299,7 @@ func main() {
 	fmt.Println("2: Ver Conta")
 	fmt.Println("3: Adicionar dinheiro ")
 	fmt.Println("4: Retirar dinheiro")
+	fmt.Println("5: Deletar Conta")
 	fmt.Println("0: Sair")
 
 	var escolha int
@@ -282,6 +314,8 @@ func main() {
 		addDinheiro(db)
 	case 4:
 		removeDinheiro(db)
+	case 5:
+		deletConta(db)
 	case 0:
 		fmt.Println("Saindo do sistema.")
 	default:
@@ -292,6 +326,6 @@ func main() {
 
 //TODO: Implement timeSleep forEach escolha(option)
 
-func timeSleep() {
-	time.Sleep(2 * time.Second)
+func timeSleep(second time.Duration) {
+	time.Sleep(second * time.Second)
 }
