@@ -1,11 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Vemba´s Bank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vemba's Bank</title>
     <link rel="stylesheet" href="../CSS/Style.css">
+    <script src="../JS/api.js" defer></script>
+    <script src="../JS/main.js" defer></script>
 </head>
 <body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Vemba's Bank</h1>
+            </div>
+            <ul class="menu">
+                <li><a href="#home">Início</a></li>
+                <li><a href="#services">Serviços</a></li>
+                <li><a href="#about">Sobre</a></li>
+                <li><a href="#contact">Contato</a></li>
+            </ul>
+        </nav>
+    </header>
 
+    <main>
+        <section id="home" class="hero">
+            <h2>Bem-vindo ao Vemba's Bank</h2>
+            <p>Seu dinheiro em boas mãos</p>
+            <button class="cta-button">Abra sua conta</button>
+        </section>
+
+        <section id="services">
+            <h2>Nossos Serviços</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <h3>Conta Corrente</h3>
+                    <p>Gerencie seu dinheiro com facilidade</p>
+                </div>
+                <div class="service-card">
+                    <h3>Investimentos</h3>
+                    <p>Faça seu dinheiro render</p>
+                </div>
+                <div class="service-card">
+                    <h3>Empréstimos</h3>
+                    <p>Taxas competitivas para você</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="login-section" class="form-section">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+        </section>
+
+        <section id="user-area" class="hidden">
+            <h2>Área do Cliente</h2>
+            <div class="balance-info">
+                <h3>Saldo Atual:</h3>
+                <p id="current-balance">R$ 0,00</p>
+            </div>
+            
+            <div class="transfer-section">
+                <h3>Realizar Transferência</h3>
+                <form id="transfer-form">
+                    <div class="form-group">
+                        <label for="destination-account">Conta Destino:</label>
+                        <input type="text" id="destination-account" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Valor:</label>
+                        <input type="number" id="amount" step="0.01" required>
+                    </div>
+                    <button type="submit">Transferir</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Vemba's Bank. Todos os direitos reservados.</p>
+    </footer>
 </body>
 </html>

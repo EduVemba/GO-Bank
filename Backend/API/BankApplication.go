@@ -44,8 +44,6 @@ func connectDB() *sql.DB {
 	if err != nil {
 		panic(err)
 	}
-
-	//fmt.Println("Successfully connected to DB")
 	return db
 }
 
@@ -64,6 +62,7 @@ type Conta struct {
 	TipoConta string
 	Dinheiro  float64
 	Email     string
+	Password  string
 }
 
 func addDinheiro(db *sql.DB) {
